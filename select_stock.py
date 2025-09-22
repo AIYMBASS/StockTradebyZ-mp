@@ -36,6 +36,8 @@ def load_data(data_dir: Path, codes: Iterable[str]) -> Dict[str, pd.DataFrame]:
             logger.warning("%s 不存在，跳过", fp.name)
             continue
         df = pd.read_csv(fp, parse_dates=["date"]).sort_values("date")
+        if df.empty:
+            continue
         frames[code] = df
     return frames
 
@@ -140,7 +142,7 @@ def main():
     print(f"待加载数据总数:{len(codes)}")
     print("数据加载中...")
 
-    data = load_data(data_dir, codes)
+    data = load_data_mp(data_dir, codes)
 
     end = time.time()
     print(f"加载数据耗时 {end - start:.4f} 秒")
@@ -161,6 +163,9 @@ def main():
     # --- 加载 Selector 配置 ---
     selector_cfgs = load_config(Path(args.config))
 
+    start = time.time()
+    print("选股进行中...")
+
     # --- 逐个 Selector 运行 ---
     for cfg in selector_cfgs:
         if cfg.get("activate", True) is False:
@@ -180,6 +185,8 @@ def main():
         logger.info("符合条件股票数: %d", len(picks))
         logger.info("%s", ", ".join(picks) if picks else "无符合条件股票")
 
+    end = time.time()
+    print(f"选股耗时 {end - start:.4f} 秒")
 
 if __name__ == "__main__":
     main()
